@@ -1,0 +1,129 @@
+Sub StockAnalysis()
+    ' Set variables
+    Dim total As Double
+    Dim i As Long
+    Dim change As Single
+    Dim j As Integer
+    Dim start As Long
+    Dim rowCount As Long
+    Dim percentChange As Single
+    Dim maxPercentIncrease As Double
+    Dim maxPercentDecrease As Double
+    Dim maxTotalVolume As Double
+    Dim maxPercentIncreaseTicker As String
+    Dim maxPercentDecreaseTicker As String
+    Dim maxTotalVolumeTicker As String
+
+    ' Set title row
+    Range("I1").Value = "Ticker"
+    Range("J1").Value = "Yearly Change"
+    Range("K1").Value = "Percent Change"
+    Range("L1").Value = "Total Stock Volume"
+
+    ' Set initial values
+    j = 0
+    total = 0
+    change = 0
+    start = 2
+    maxPercentIncrease = 0
+    maxPercentDecrease = 0
+    maxTotalVolume = 0
+    maxPercentIncreaseTicker = ""
+    maxPercentDecreaseTicker = ""
+    maxTotalVolumeTicker = ""
+
+    ' Get the row number of the last row with data
+    rowCount = Cells(Rows.Count, "A").End(xlUp).row
+
+    ' Loop through the data
+    For i = 2 To rowCount
+        ' If ticker changes then print results
+        If Cells(i + 1, 1).Value <> Cells(i, 1).Value Then
+            ' Calculate total stock volume
+            total = total + Cells(i, 7).Value
+
+            ' Handle zero total volume
+            If total = 0 Then
+                ' Print the results
+                PrintResults i, j, Cells(i, 1).Value, 0, "%" & 0, 0
+            Else
+                ' Find first non-zero starting value
+                If Cells(start, 3).Value = 0 Then
+                    For findValue = start To i
+                        If Cells(findValue, 3).Value <> 0 Then
+                            start = findValue
+                            Exit For
+                        End If
+                    Next findValue
+                End If
+
+                ' Calculate change and percent change
+                change = Cells(i, 6).Value - Cells(start, 3).Value
+                percentChange = change / Cells(start, 3).Value
+
+                ' Print the results
+                PrintResults i, j, Cells(i, 1).Value, change, FormatNumber(percentChange, 2) & "%", total
+                
+                ' Color positives green and negatives red
+                Select Case change
+                    Case Is > 0
+                        Range("J" & 2 + j).Interior.ColorIndex = 4
+                    Case Is < 0
+                        Range("J" & 2 + j).Interior.ColorIndex = 3
+                    Case Else
+                        Range("J" & 2 + j).Interior.ColorIndex = 0
+                End Select
+
+                ' Update greatest percent increase, percent decrease, and total volume
+                If percentChange > maxPercentIncrease Then
+                    maxPercentIncrease = percentChange
+                    maxPercentIncreaseTicker = Cells(i, 1).Value
+                End If
+                If percentChange < maxPercentDecrease Then
+                    maxPercentDecrease = percentChange
+                    maxPercentDecreaseTicker = Cells(i, 1).Value
+                End If
+                If total > maxTotalVolume Then
+                    maxTotalVolume = total
+                    maxTotalVolumeTicker = Cells(i, 1).Value
+                End If
+            End If
+
+            ' Reset variables for new stock ticker
+            total = 0
+            change = 0
+            j = j + 1
+            start = i + 1
+        Else
+            ' If ticker is still the same, add to total stock volume
+            total = total + Cells(i, 7).Value
+        End If
+    Next i
+    
+    ' Print the greatest percent increase, percent decrease, and total volume
+    Range("O1").Value = ""
+    Range("P1").Value = "Ticker"
+    Range("Q1").Value = "Value"
+    Range("O2").Value = "Greatest % Increase"
+    Range("O3").Value = "Greatest % Decrease"
+    Range("O4").Value = "Greatest Total Volume"
+    Range("P2").Value = maxPercentIncreaseTicker
+    Range("P3").Value = maxPercentDecreaseTicker
+    Range("P4").Value = maxTotalVolumeTicker
+    Range("Q2").Value = maxPercentIncrease
+    Range("Q3").Value = maxPercentDecrease
+    Range("Q4").Value = maxTotalVolume
+    Range("Q2:Q4").NumberFormat = "0.00%"
+End Sub
+
+' Subroutine to print the results
+Sub PrintResults(row As Long, counter As Integer, ticker As String, change As Single, percentChange As String, volume As Double)
+    ' Print the results
+    Range("I" & 2 + counter).Value = ticker
+    Range("J" & 2 + counter).Value = change
+    Range("J" & 2 + counter).NumberFormat = "0.00"
+    Range("K" & 2 + counter).Value = percentChange
+    Range("K" & 2 + counter).NumberFormat = "0.00%"
+    Range("L" & 2 + counter).Value = volume
+End Sub
+
